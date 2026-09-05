@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isCircleMember(circleId) {
+      return isAuthenticated() && exists(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid));
+    }
+
+    function isCircleOwner(circleId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/circles/$(circleId)/members/$(request.auth.uid)).data.role == 'OWNER';
+    }
+
+    match /profiles/{userId} {
+      allow read: if isAuthenticated() && (userId == request.auth.uid || resource.data.visibility == 'COMMUNITY');
+      allow write: if isOwner(userId);
+    }
+
+    match /circles/{circleId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isCircleOwner(circleId);
+
+      match /members/{userId} {
+        allow read: if isCircleMember(circleId);
+        allow create: if isCircleOwner(circleId) || (isAuthenticated() && get(/databases/$(database)/documents/circles/$(circleId)).data.ownerId == request.auth.uid && request.auth.uid == userId);
+        allow update, delete: if isCircleOwner(circleId);
+      }
+
+      match /joinRequests/{userId} {
+        allow read: if isOwner(userId) || isCircleOwner(circleId);
+        allow create: if isOwner(userId);
+        allow delete: if isOwner(userId) || isCircleOwner(circleId);
+      }
+
+      match /sharedDecisions/{sharedDecisionId} {
+        allow read: if isCircleMember(circleId);
+        allow create: if isCircleMember(circleId) && request.resource.data.authorId == request.auth.uid;
+        allow update: if isCircleMember(circleId) && resource.data.authorId == request.auth.uid;
+        allow delete: if isCircleMember(circleId) && (resource.data.authorId == request.auth.uid || isCircleOwner(circleId));
+
+        match /perspectives/{perspectiveId} {
+          allow read: if isCircleMember(circleId);
+          allow create: if isCircleMember(circleId) && request.resource.data.authorId == request.auth.uid;
+          allow update: if isCircleMember(circleId) && resource.data.authorId == request.auth.uid;
+          allow delete: if isCircleMember(circleId) && (resource.data.authorId == request.auth.uid || isCircleOwner(circleId));
+        }
+
+        match /synthesis/latest {
+          allow read: if isCircleMember(circleId);
+          allow write: if isCircleMember(circleId) && get(/databases/$(database)/documents/circles/$(circleId)/sharedDecisions/$(sharedDecisionId)).data.authorId == request.auth.uid;
+        }
+      }
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /journalEntries/{entryId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && request.resource.data.userId == userId;
+      }
+
+      match /analyses/{analysisId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId);
+      }
+
+      match /decisions/{decisionId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && request.resource.data.userId == userId;
+      }
+
+      match /goals/{goalId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && request.resource.data.userId == userId;
+      }
+
+      match /insights/{insightId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && request.resource.data.userId == userId;
+      }
+
+      match /fingerprint/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}

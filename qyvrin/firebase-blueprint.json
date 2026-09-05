@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "A user's financial journal entry.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "maxLength": 5000 },
+        "category": { "type": "string", "maxLength": 50 },
+        "date": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["draft", "analyzed"] }
+      },
+      "required": ["text", "category", "date", "status"]
+    },
+    "DecisionAnalysis": {
+      "title": "DecisionAnalysis",
+      "description": "Analysis of a journal entry.",
+      "type": "object",
+      "properties": {
+        "journalEntryId": { "type": "string", "maxLength": 128 },
+        "summary": { "type": "string", "maxLength": 2000 },
+        "financialSignals": { "type": "array" },
+        "assumptions": { "type": "array" },
+        "potentialRisks": { "type": "array" },
+        "possiblePatterns": { "type": "array" },
+        "questionsToConsider": { "type": "array" },
+        "alternativeScenarios": { "type": "array" },
+        "decisionReadiness": { "type": "number" },
+        "createdAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["journalEntryId", "summary", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/journalEntries/{entryId}": {
+      "schema": { "$ref": "#/entities/JournalEntry" },
+      "description": "Stores user journal entries"
+    },
+    "users/{userId}/analyses/{analysisId}": {
+      "schema": { "$ref": "#/entities/DecisionAnalysis" },
+      "description": "Stores AI analysis for journal entries"
+    }
+  }
+}
