@@ -557,7 +557,7 @@ Do not include any markdown formatting around the JSON (no \`\`\`json). Return p
       }
       
       // Authorization Check
-      const db = getFirestore();
+      const db = getFirestore(undefined, 'ai-studio-qyvrin-59b0d002-89ab-43cc-bb2b-3e093475add3');
       const docRef = db.collection('circles').doc(circleId).collection('sharedDecisions').doc(decisionId);
       const docSnap = await docRef.get();
       
