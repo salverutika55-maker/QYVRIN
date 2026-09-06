@@ -529,7 +529,7 @@ Do not include any markdown formatting around the JSON (no \`\`\`json). Return p
       const uid = decodedToken.uid;
       console.log(`[SYNTHESIS_REQUEST] requestId=${requestId} endpoint=/api/circle-synthesis uid=${uid}`);
 
-      const { allowed, retryAfter } = checkRateLimit(uid, '/api/circle-synthesis', 5);
+      const { allowed, retryAfter } = checkRateLimit(uid, '/api/circle-synthesis', 20);
       if (!allowed) {
         res.setHeader('Retry-After', retryAfter.toString());
         return res.status(429).json({ error: 'Rate limit exceeded' });
